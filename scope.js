@@ -27,7 +27,6 @@
       if (/pulse_data/.test(data)) {
       data = JSON.parse(e.data)
       data = data['DCRC1']['PA']
-      console.log(data)
       console.log(Math.max.apply(Math,data.pulse_data))
       refreshGraph([data.pulse_data])
       }
@@ -38,11 +37,13 @@
 
   // make yourself an SVG container
   // in the DOM
-  var width = 1000
-  var height = 200
+  var svgWidth = 1200
+  var svgHeight = 300
+  var plotWidth = 1000
+  var plotHeight = 200
   var svg = d3.select("#plot").append("svg:svg")
-  .attr("width", width)
-  .attr("height", height)
+  .attr("width", svgWidth)
+  .attr("height", svgHeight)
   
   // and now let's plot some lines
   // in that SVG container
@@ -61,19 +62,28 @@
   // of the d3.svg.line()
   var x_scale = d3.scale.linear()
     .domain([0, num_samples])
-    .range([0, width])
+    .range([0, plotWidth])
 
   var y_scale = d3.scale.linear()
     .domain([4800,4500])
-    .range([0, height])
+    .range([0, plotHeight])
     //.domain([adc_max, 0])
+    
+ var y_axis = d3.svg.axis()
+  .scale(y_scale)
+  .orient("left")
+  .ticks(10)
+  
+  svg.append("g")
+    .attr("class", "y axis")
+    .attr("transform","translate(100,0)")
+    .call(y_axis)
   
   var trace = d3.svg.line()
       .x(function(d,i) { return x_scale(i); })
       .y(function(d,i) { return y_scale(d); })
   
 var refreshGraph = function(new_data) {
-    console.log('refreshing graph?')
     var traces = svg.selectAll("path.new")
       .data(new_data)
       
@@ -104,25 +114,7 @@ d3.selectAll(".ping")
  .on("click",function(){
    connection.send('Ping');
  })
-  d3.selectAll(".add-data")
-   .on("click", function() {
-     var volt_min = 0
-     var volt_max = 4
-     var volts = []
-     var new_data = []
-     var num_traces = 1 //Math.floor(1 + 10*Math.random())
-     
-     for (var j = 0; j < num_traces; j++) {
-       new_data[j] = new Array(num_samples)
-     for (var i = 0; i < num_samples; i++) {
-       new_data[j][i] = volt_min + Math.random() * (volt_max - volt_min)
-       //console.log(volts[i])
-     }
-     }
-     console.log(new_data)
-     refreshGraph(new_data)
-  })
-
+ 
   //refreshGraph(volt_data)
 
 })();
