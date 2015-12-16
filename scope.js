@@ -10,7 +10,7 @@
   
   // When the connection is open, send some data to the server
   connection.onopen = function () {
-    connection.send('Ping'); // Send the message 'Ping' to the server
+    //connection.send('Ping'); // Send the message 'Ping' to the server
   };
   
   // Log errors
@@ -20,11 +20,17 @@
   
   // Log messages from the server
   connection.onmessage = function (e) {
-    console.log('Server: ' + e.data);
+    console.log(e);
     try {
-      var data = JSON.parse(e.data)
+      //var data = e.data.replace(/(\r\n|\n|\r)/gm, "")
+      var data = e.data
+      if (/pulse_data/.test(data)) {
+      data = JSON.parse(e.data)
       data = data['DCRC1']['PA']
-      refreshGraph[data.pulse_data]
+      console.log(data)
+      console.log(Math.max.apply(Math,data.pulse_data))
+      refreshGraph([data.pulse_data])
+      }
     } catch (err) {
       console.log(err)
     }
@@ -41,12 +47,8 @@
   // and now let's plot some lines
   // in that SVG container
   // using this here data
-  var num_samples = 1024
-  var volt_data = [[2,2.3,2.6,2,1.9],
-                   [2.4,4,2,4.5,3],
-                   [1.3,2.1,2.6,1.2,0.8]]
-  //var trace_data = d3.zip(volt_data, time_data)
-  //console.log(trace_data)
+  var num_samples = 4096
+  var adc_max = 10000
   
   // not currently using these functions
   // keeping them around 'cause they might be useful
@@ -62,14 +64,16 @@
     .range([0, width])
 
   var y_scale = d3.scale.linear()
-    .domain([5, 0])
-    .range([height, 0])
+    .domain([4800,4500])
+    .range([0, height])
+    //.domain([adc_max, 0])
   
   var trace = d3.svg.line()
       .x(function(d,i) { return x_scale(i); })
       .y(function(d,i) { return y_scale(d); })
   
 var refreshGraph = function(new_data) {
+    console.log('refreshing graph?')
     var traces = svg.selectAll("path.new")
       .data(new_data)
       
@@ -96,14 +100,17 @@ var refreshGraph = function(new_data) {
      .remove() 
 }
 
+d3.selectAll(".ping")
+ .on("click",function(){
+   connection.send('Ping');
+ })
   d3.selectAll(".add-data")
    .on("click", function() {
      var volt_min = 0
      var volt_max = 4
      var volts = []
      var new_data = []
-     var num_traces = Math.floor(1 + 10*Math.random())
-     
+     var num_traces = 1 //Math.floor(1 + 10*Math.random())
      
      for (var j = 0; j < num_traces; j++) {
        new_data[j] = new Array(num_samples)
@@ -116,6 +123,6 @@ var refreshGraph = function(new_data) {
      refreshGraph(new_data)
   })
 
-  refreshGraph(volt_data)
+  //refreshGraph(volt_data)
 
 })();
